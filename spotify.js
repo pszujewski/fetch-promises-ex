@@ -5,7 +5,6 @@ var getFromApi = function(endpoint, query={}) {
         if (!response.ok) {
             return Promise.reject(response.statusText);
         }
-        console.log(response);
         return response.json();
     });
 };
@@ -15,21 +14,41 @@ var artist;
 var getArtist = function(name) {
     const artistQuery = { q: name, limit: 1, type: 'artist' };
     return getFromApi("search", artistQuery).then(function(item){
-        console.log('The item is: ',item);
         artist= item.artists.items[0];
         let artistId= item.artists.items[0].id;
-        console.log('Artist ID is: ', artistId);
         let relatedArtistUrl= `https://api.spotify.com/v1/artists/${artistId}/related-artists`;
-        console.log(artist);
-
         return fetch(relatedArtistUrl);
     }).then(function(response) {
         return response.json();
     }).then(function(parsedData){
-        console.log('Parsed Data: ',parsedData);
         artist.related = parsedData.artists;
-        console.log('Returning: ',artist);
-        return artist;
+        console.log(artist.related[0]);
+        let urls = [];
+        for (let i=0; i<artist.related.length; i++) {
+          let id = artist.related[i].id;
+          let topTracksUrl = `https://api.spotify.com/v1/artists/${id}/top-tracks?country=us`;
+          urls.push(fetch(topTracksUrl));
+        }
+      let allPromises = Promise.all(urls);
+      return allPromises;
+    }).then(function(responseArr) {
+        // let data = [];
+        // for (let i=0; i<responseArr.length; i++) {
+        //     data.push(responseArr[i].json());
+        // }
+        return responseArr;
+    }).then(function(results) {
+        let test = results instanceof Array;
+        console.log("friendly test", test);
+        // let data2 = [];
+        // for (let i=0; i<results.length; i++) {
+        //     data2.push(results[i].json());
+        // }
+        // console.log(data2);
+        // return data2;
+        //return results.json();
+    }).then(function(anotherResult){
+       console.log(typeof anotherResult);
     })
     .catch(function(err){
         console.error(err);
