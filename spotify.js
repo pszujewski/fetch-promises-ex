@@ -19,7 +19,9 @@ var getArtist = function(name) {
         let relatedArtistUrl= `https://api.spotify.com/v1/artists/${artistId}/related-artists`;
         return fetch(relatedArtistUrl);
     }).then(function(response) {
-        return response.json();
+        let show = response.json();
+        console.log(show);
+        return show;
     }).then(function(parsedData){
         artist.related = parsedData.artists;
         console.log(artist.related[0]);
@@ -32,14 +34,16 @@ var getArtist = function(name) {
       let allPromises = Promise.all(urls);
       return allPromises;
     }).then(function(responseArr) {
-        // let data = [];
-        // for (let i=0; i<responseArr.length; i++) {
-        //     data.push(responseArr[i].json());
-        // }
-        return responseArr;
+        let data = [];
+        for (let i=0; i<responseArr.length; i++) {
+            data.push(responseArr[i].json());
+        }
+        console.log("Array of responses",responseArr);
+        return data;
     }).then(function(results) {
-        let test = results instanceof Array;
-        console.log("friendly test", test);
+       console.log(results);
+       let pieceOfData = results[1].tracks[1].album.name;
+       console.log(pieceOfData);
         // let data2 = [];
         // for (let i=0; i<results.length; i++) {
         //     data2.push(results[i].json());
