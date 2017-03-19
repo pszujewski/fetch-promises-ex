@@ -40,8 +40,10 @@ var getArtist = function(name) {
         for (let i=0; i<response.length; i++) {
             artist.related[i].tracks = response[i].tracks;
         }
-        console.log(artist);
-        return artist;
+        // then methods return promises so the following isn't really necessary
+        // instead you could simply 'return artist'
+        // but it works anyway. Promise.resolve itself returns a promise object
+        return Promise.resolve(artist); 
     }) // handle any errors in the chain
     .catch(error => {
         console.error(error.stack);
