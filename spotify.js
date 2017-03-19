@@ -9,52 +9,43 @@ var getFromApi = function(endpoint, query={}) {
     });
 };
 
-
-var artist;
+// undeclared variable to which we will save all data on searched artist and related artists
+var artist; 
 var getArtist = function(name) {
-    const artistQuery = { q: name, limit: 1, type: 'artist' };
-    return getFromApi("search", artistQuery).then(function(item){
-        artist= item.artists.items[0];
-        let artistId= item.artists.items[0].id;
-        let relatedArtistUrl= `https://api.spotify.com/v1/artists/${artistId}/related-artists`;
-        return fetch(relatedArtistUrl);
-    }).then(function(response) {
-        let show = response.json();
-        console.log(show);
-        return show;
-    }).then(function(parsedData){
-        artist.related = parsedData.artists;
-        console.log(artist.related[0]);
-        let urls = [];
+    const artistQuery = { 
+        q: name,
+        limit: 1,
+        type: "artist"
+     }; 
+    return getFromApi("search", artistQuery).then(response => {
+        // Save object representing information on the artist to the undeclared 'artist' variable
+        artist = response.artists.items[0];
+        let artistId = artist.id;
+        return getFromApi(`artists/${artistId}/related-artists`); // returns a promise, so chaining 'then()' is possible
+    }).then(response => {
+        // Add array of objects representing all related artists to the artist object
+        artist.related = response.artists; 
+        let tracksBin = [];
         for (let i=0; i<artist.related.length; i++) {
-          let id = artist.related[i].id;
-          let topTracksUrl = `https://api.spotify.com/v1/artists/${id}/top-tracks?country=us`;
-          urls.push(fetch(topTracksUrl));
+           let id = artist.related[i].id;
+           let endpoint = `artists/${id}/top-tracks`;
+           let q = {
+               country: "us"
+           };
+           tracksBin.push(getFromApi(endpoint, q));
         }
-      let allPromises = Promise.all(urls);
-      return allPromises;
-    }).then(function(responseArr) {
-        let data = [];
-        for (let i=0; i<responseArr.length; i++) {
-            data.push(responseArr[i].json());
+        // Get each artists top tracks and return all responses at once
+        return Promise.all(tracksBin);
+    }).then(response => {
+        for (let i=0; i<response.length; i++) {
+            artist.related[i].tracks = response[i].tracks;
         }
-        console.log("Array of responses",responseArr);
-        return data;
-    }).then(function(results) {
-       console.log(results);
-       let pieceOfData = results[1].tracks[1].album.name;
-       console.log(pieceOfData);
-        // let data2 = [];
-        // for (let i=0; i<results.length; i++) {
-        //     data2.push(results[i].json());
-        // }
-        // console.log(data2);
-        // return data2;
-        //return results.json();
-    }).then(function(anotherResult){
-       console.log(typeof anotherResult);
-    })
-    .catch(function(err){
-        console.error(err);
+        console.log(artist);
+        return artist;
+    }) // handle any errors in the chain
+    .catch(error => {
+        console.error(error.stack);
+        return error;
     });
-};
+}
+
